@@ -153,6 +153,30 @@ builtAssets: build/
 
 ## Using a private git repository
 
+- Create a Kubernetes secret with a Github (fine-grained) personal access token (PAT)
+
+```bash
+export PAT=github_pat_xxxx
+export GITHUB_URL_WITH_PAT=https://$PAT@github.com/laszlocph/reactjs-test-app-private.git
+
+kubectl create secret generic git-creds --from-literal=gitCloneUrl=$GITHUB_URL_WITH_PAT
+```
+
+- Reference the secret to provide the github clone url
+
+```diff
+#values.yaml
+- gitCloneUrl: https://github.com/laszlocph/reactjs-test-app.git
++ gitCloneUrlSecretName: git-creds
+buildImage: "node:20.10-buster"
+buildScript: npm install && npm run build
+builtAssets: build/
+```
+
+```bash
+helm template my-react-site onechart/static-site -f values.yaml | kubectl apply -f -
+```
+
 ## Deploying multiple sites
 
 - Deploy another site
