@@ -1,0 +1,7 @@
+image:
+  repository: ttl.sh/my-react-site-from-image
+  tag: 1d
+  pullPolicy: Always
+
+resources:
+  ignore: true

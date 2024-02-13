@@ -1,0 +1,106 @@
+---
+# Source: static-site/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-react-site
+  namespace: default
+  labels:
+    helm.sh/chart: static-site-0.63.0
+    app.kubernetes.io/name: static-site
+    app.kubernetes.io/instance: my-react-site
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: static-site
+    app.kubernetes.io/instance: my-react-site
+---
+# Source: static-site/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-react-site
+  namespace: default
+  labels:
+    helm.sh/chart: static-site-0.63.0
+    app.kubernetes.io/name: static-site
+    app.kubernetes.io/instance: my-react-site
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: static-site
+      app.kubernetes.io/instance: my-react-site
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: static-site
+        app.kubernetes.io/instance: my-react-site
+    spec:
+      securityContext:
+        {} 
+      volumes:
+      - name: static-files
+        emptyDir: {}  
+      initContainers:
+      - name: init-con
+        image: node:20.10-buster
+        command:
+        - sh 
+        - -c 
+        - |
+           git clone https://github.com/laszlocph/reactjs-test-app.git &&
+           cd reactjs-test-app &&
+           
+            npm install && npm run build
+           mkdir -p /usr/share/nginx/html &&
+           cp -r ./build/. /usr/share/nginx/html
+        volumeMounts:
+        - name: static-files
+          mountPath: /usr/share/nginx/html   
+      containers:
+        - name: my-react-site
+          securityContext:
+            runAsUser: 0
+          image: "nginx:latest"
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - name: static-files
+            mountPath: /usr/share/nginx/html
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+---
+# Source: static-site/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:  
+  name: my-react-site
+  namespace: default
+  labels:
+    helm.sh/chart: static-site-0.63.0
+    app.kubernetes.io/name: static-site
+    app.kubernetes.io/instance: my-react-site
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: "58ae998a-001d-4ce2-a7f2-a27b84f73afc.k8s.civo.com"
+      http:
+        paths:
+          - path: "/"
+            pathType: "Prefix"
+            backend:
+              service:
+                name: my-react-site
+                port:
+                  number: 80

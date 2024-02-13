@@ -1,0 +1,9 @@
+gitCloneUrl: https://github.com/laszlocph/reactjs-test-app.git
+buildImage: "node:20.10-buster"
+buildScript: npm install && npm run build
+builtAssets: build/
+
+ingress:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  host: walkthrough.turbopizza.net
